@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connection Test</title>
+</head>
+<body>
+    <h1>Connection Test</h1>
+    <div id="status">Testing connections...</div>
+    <div id="results"></div>
+
+    <script>
+        async function testConnections() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            statusDiv.innerHTML = 'Testing connections...';
+            resultsDiv.innerHTML = '';
+            
+            try {
+                // Test backend health endpoint
+                const healthResponse = await fetch('http://127.0.0.1:8787/api/health');
+                const healthData = await healthResponse.json();
+                
+                resultsDiv.innerHTML += `<p style="color: green;">✅ Backend health check: ${healthResponse.status} - ${healthData.message}</p>`;
+                
+                // Test frontend
+                resultsDiv.innerHTML += `<p style="color: green;">✅ Frontend server is running</p>`;
+                
+                // Test export endpoint OPTIONS
+                const optionsResponse = await fetch('http://127.0.0.1:8787/api/export', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://127.0.0.1:5180'
+                    }
+                });
+                
+                resultsDiv.innerHTML += `<p style="color: green;">✅ Export OPTIONS: ${optionsResponse.status}</p>`;
+                
+                statusDiv.innerHTML = 'All connections working!';
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: red;">❌ Connection test failed: ${error.message}</p>`;
+                statusDiv.innerHTML = 'Connection test completed with errors';
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testConnections);
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CORS</title>
+</head>
+<body>
+    <h1>Test CORS Request</h1>
+    <button id="testBtn">Test Export</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            try {
+                const testData = {
+                    rows: [
+                        {
+                            wordId: 1,
+                            word: "merhaba",
+                            arabicTranslation: "مرحبا",
+                            wordIconKey: null,
+                            categoryName: "Greetings",
+                            categoryIconKey: null,
+                            difficultyLevel: "A1",
+                            tags: ["greeting", "common"],
+                            turkishSentence: "Merhaba, nasılsın?",
+                            arabicSentence: "مرحبا، كيف حالك؟",
+                            vowelHarmonyRule: "front"
+                        }
+                    ],
+                    fileName: "test_export",
+                    embedImages: false
+                };
+
+                const response = await fetch('http://127.0.0.1:8787/api/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                if (response.ok) {
+                    document.getElementById('result').innerHTML = '<p style="color: green;">CORS test successful! Status: ' + response.status + '</p>';
+                } else {
+                    const errorText = await response.text();
+                    document.getElementById('result').innerHTML = '<p style="color: red;">CORS test failed! Status: ' + response.status + ', Error: ' + errorText + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">CORS test failed with error: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>

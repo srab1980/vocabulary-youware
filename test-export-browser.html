@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Export Test</title>
+</head>
+<body>
+    <h1>Export Test</h1>
+    <button onclick="testExport()">Test Export</button>
+    <div id="result"></div>
+
+    <script>
+        async function testExport() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing export...';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8787/api/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rows: [
+                            {
+                                word: 'Test',
+                                arabicTranslation: 'اختبار'
+                            }
+                        ],
+                        fileName: 'test',
+                        embedImages: true
+                    })
+                });
+                
+                resultDiv.innerHTML = `Status: ${response.status}<br>`;
+                
+                // Log all headers
+                resultDiv.innerHTML += 'Headers:<br>';
+                for (const [key, value] of response.headers.entries()) {
+                    resultDiv.innerHTML += `&nbsp;&nbsp;${key}: ${value}<br>`;
+                }
+                
+                if (response.ok) {
+                    resultDiv.innerHTML += 'Success!';
+                } else {
+                    resultDiv.innerHTML += `Error: ${response.status}`;
+                    const text = await response.text();
+                    resultDiv.innerHTML += `<br>Body: ${text}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}<br>Stack: ${error.stack}`;
+            }
+        }
+    </script>
+</body>
+</html>

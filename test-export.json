@@ -1,0 +1,11 @@
+{
+  "rows": [
+    {
+      "word": "test",
+      "arabicTranslation": "اختبار",
+      "turkishSentence": "This is a test sentence that is not too long",
+      "arabicSentence": "جملة اختبار قصيرة"
+    }
+  ],
+  "fileName": "test_export"
+}
