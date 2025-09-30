@@ -84,6 +84,7 @@ const buildQuery = (params: Record<string, string | number | boolean | undefined
 export const apiClient = {
   async listCategories(options: { categoryType?: string } = {}): Promise<CategoriesResponse> {
     const query = buildQuery({ categoryType: options.categoryType });
+    console.log('API Client - listCategories query:', query);
     const response = await safeFetch(`${API_BASE}/categories${query}`);
     return handleResponse<CategoriesResponse>(response);
   },

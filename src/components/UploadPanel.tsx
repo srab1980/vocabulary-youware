@@ -52,7 +52,7 @@ const parseTags = (raw: unknown): string[] => {
 
 export function UploadPanel({ selectedCategoryId }: UploadPanelProps) {
   const bulkImportWords = useWordsStore((state) => state.bulkImportWords);
-  const enqueueWords = useImageGenerationStore((state) => state.enqueueWords);
+  // Removed enqueueWords since we don't want to automatically generate icons
   const defaultStyle = useImageGenerationStore((state) => state.defaultStyle);
 
   const [status, setStatus] = useState<string | null>(null);
@@ -161,13 +161,10 @@ export function UploadPanel({ selectedCategoryId }: UploadPanelProps) {
           throw new Error("No valid rows found. Ensure Column B contains the vocabulary words and Column C contains translations.");
         }
 
+        // Import words but don't automatically enqueue them for generation
         const inserted = bulkImportWords(filteredRows, {
           fallbackCategoryId: selectedCategoryId ?? undefined,
         });
-        enqueueWords(
-          inserted.map((row) => ({ wordId: row.id, word: row.word })),
-          { style: defaultStyle },
-        );
 
         setFileName(file.name);
         setStatus("Imported successfully.");
@@ -184,7 +181,7 @@ export function UploadPanel({ selectedCategoryId }: UploadPanelProps) {
         setError(message);
       }
     },
-    [bulkImportWords, enqueueWords, selectedCategoryId, defaultStyle],
+    [bulkImportWords, selectedCategoryId],
   );
 
   const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {

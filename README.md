@@ -11,6 +11,7 @@ A comprehensive vocabulary learning application built with React, TypeScript, an
 - 🌐 **Multi-language Support** - Support for bilingual vocabulary learning
 - ⚡ **Fast Performance** - Built with Vite for rapid development and production builds
 - ☁️ **Cloudflare Backend** - Serverless backend with Cloudflare Workers and D1 database
+- 🖼️ **ComfyUI Integration** - Generate images using local ComfyUI installations
 
 ## 🛠️ Tech Stack
 
@@ -54,7 +55,16 @@ A comprehensive vocabulary learning application built with React, TypeScript, an
    ```
    The backend will be available at http://127.0.0.1:8787
 
-5. **Build for production**:
+5. **(Optional) Start ComfyUI server**:
+   If you want to use ComfyUI for image generation:
+   ```bash
+   # Install ComfyUI following the official instructions
+   # Start ComfyUI server
+   python main.py --port 8188
+   ```
+   ComfyUI will be available at http://127.0.0.1:8188
+
+6. **Build for production**:
    ```bash
    npm run build
    ```
@@ -94,10 +104,23 @@ A comprehensive vocabulary learning application built with React, TypeScript, an
 
 ## 🎨 AI Image Generation
 
-The application integrates with YouWare AI to automatically generate illustrations for vocabulary words:
-- One-click image generation for individual words
-- Batch image generation for entire vocabulary lists
-- Image preview and regeneration capabilities
+The application integrates with multiple AI services to automatically generate illustrations for vocabulary words:
+
+### Supported Providers
+- **Hugging Face** - Use Stable Diffusion models
+- **OpenAI** - Use DALL-E models
+- **Qwen** - Use Alibaba's Qwen models
+- **ComfyUI** - Use local ComfyUI installations
+
+### ComfyUI Integration
+The application can connect to a local ComfyUI instance running on port 8188 to generate images using custom workflows.
+
+To use ComfyUI:
+1. Install and run ComfyUI on your local machine
+2. Select "ComfyUI" as the image provider in the application
+3. (Optional) Provide an API key if your ComfyUI instance requires authentication
+
+The application includes a basic workflow template at `public/comfyui-workflow-template.json` that you can customize for your specific needs.
 
 ## 🗄️ Database Structure
 
@@ -123,6 +146,11 @@ The application uses Cloudflare D1 (SQLite) for data storage:
 ### Export
 - `POST /api/export` - Export vocabulary to Excel format
 
+### AI Providers
+- `POST /api/qwen/image` - Proxy for Qwen image generation
+- `POST /api/comfyui/image` - Proxy for ComfyUI image generation
+- `GET /api/comfyui/result/:promptId` - Poll for ComfyUI generation results
+
 ## 📤 Deployment
 
 1. **Frontend Deployment**:
@@ -139,5 +167,6 @@ The application uses Cloudflare D1 (SQLite) for data storage:
 - Added icon preview functionality for better user experience
 - Removed authentication requirements for local development
 - Improved error handling and user feedback
+- Added ComfyUI integration for local AI image generation
 
 For more detailed technical information, see [YOUWARE.md](./YOUWARE.md).

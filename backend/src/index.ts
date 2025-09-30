@@ -54,7 +54,7 @@ type AppRouteHandler = (request: IRequest, env: Env, ctx: ExecutionContext) => P
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, X-Encrypted-Yw-ID, X-Is-Login",
+  "Access-Control-Allow-Headers": "Content-Type, X-Encrypted-Yw-ID, X-Is-Login, Authorization",
   "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
   "Access-Control-Max-Age": "86400",
 } as const;
@@ -1112,6 +1112,173 @@ router.delete(
 
     return json({ id }, "word deleted");
   }),
+);
+
+router.post(
+  "/qwen/image",
+  withTiming(async (request, env) => {
+    try {
+      // Get the API key from the request headers
+      const authHeader = request.headers.get("Authorization");
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return jsonError("Missing or invalid Authorization header", 401);
+      }
+      
+      const apiKey = authHeader.substring(7); // Remove "Bearer " prefix
+      
+      // Parse the request body
+      const body = await parseJson<Record<string, unknown>>(request);
+      if (!body) {
+        return jsonError("Invalid JSON body", 400);
+      }
+      
+      // Make the request to Qwen API
+      const qwenResponse = await fetch(
+        "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-to-image/image-synthesis",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      );
+      
+      // Get the response data
+      const responseData = await qwenResponse.json();
+      
+      // Return the response with appropriate CORS headers
+      const origin = request.headers.get('Origin') || undefined;
+      return json(responseData as JsonValue, "Qwen image generation response", qwenResponse.status, 0, origin);
+    } catch (error) {
+      console.error("Qwen API proxy error:", error);
+      const origin = request.headers.get('Origin') || undefined;
+      return jsonError(
+        `Qwen API request failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+        500, 
+        500, 
+        origin
+      );
+    }
+  })
+);
+
+// Add ComfyUI image generation endpoint
+router.post(
+  "/comfyui/image",
+  withTiming(async (request, env) => {
+    try {
+      console.log("ComfyUI endpoint called");
+      
+      // Log the raw request details for debugging
+      console.log("ComfyUI request headers:", [...request.headers.entries()]);
+      console.log("ComfyUI request method:", request.method);
+      
+      // Parse the request body
+      const body = await parseJson<Record<string, unknown>>(request);
+      if (!body) {
+        console.error("Invalid JSON body");
+        // Log the raw body for debugging
+        const rawBody = await request.text().catch(() => 'Failed to read raw body');
+        console.error("Raw body:", rawBody);
+        return jsonError("Invalid JSON body", 400);
+      }
+      
+      console.log("ComfyUI request body received:", JSON.stringify(body, null, 2));
+      
+      // For ComfyUI, wrap the workflow in {prompt: ...}
+      const comfyUIPayload = {prompt: body};
+      console.log("Sending to ComfyUI with prompt wrapper:", JSON.stringify(comfyUIPayload, null, 2));
+      
+      // Make the request to ComfyUI API
+      // ComfyUI runs locally on port 8188
+      const comfyuiResponse = await fetch(
+        "http://127.0.0.1:8188/prompt",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(comfyUIPayload), // Wrap the workflow in {prompt: ...}
+        }
+      );
+      
+      console.log("ComfyUI response status:", comfyuiResponse.status);
+      
+      // Check if the response is ok
+      if (!comfyuiResponse.ok) {
+        const errorText = await comfyuiResponse.text();
+        console.error("ComfyUI API error response:", errorText);
+        throw new Error(`ComfyUI API error (${comfyuiResponse.status}): ${errorText}`);
+      }
+      
+      // Get the response data
+      const responseData = await comfyuiResponse.json();
+      console.log("ComfyUI response data:", JSON.stringify(responseData, null, 2));
+      
+      // Return the response with appropriate CORS headers
+      const origin = request.headers.get('Origin') || undefined;
+      return json(responseData as JsonValue, "ComfyUI image generation response", comfyuiResponse.status, 0, origin);
+    } catch (error) {
+      console.error("ComfyUI API proxy error:", error);
+      const origin = request.headers.get('Origin') || undefined;
+      return jsonError(
+        `ComfyUI API request failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+        500, 
+        500, 
+        origin
+      );
+    }
+  })
+);
+
+// Add ComfyUI result polling endpoint
+router.get(
+  "/comfyui/result/:promptId",
+  withTiming(async (request, env) => {
+    try {
+      const promptId = request.params?.promptId;
+      if (!promptId) {
+        return jsonError("Missing prompt ID", 400);
+      }
+      
+      // Poll ComfyUI for the result
+      const comfyuiResponse = await fetch(
+        `http://127.0.0.1:8188/history/${promptId}`,
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+          },
+        }
+      );
+      
+      // Check if the response is ok
+      if (!comfyuiResponse.ok) {
+        const errorText = await comfyuiResponse.text();
+        throw new Error(`ComfyUI API error (${comfyuiResponse.status}): ${errorText}`);
+      }
+      
+      // Get the response data
+      const responseData = await comfyuiResponse.json();
+      
+      // Return the response with appropriate CORS headers
+      const origin = request.headers.get('Origin') || undefined;
+      return json(responseData as JsonValue, "ComfyUI result", comfyuiResponse.status, 0, origin);
+    } catch (error) {
+      console.error("ComfyUI result polling error:", error);
+      const origin = request.headers.get('Origin') || undefined;
+      return jsonError(
+        `ComfyUI result polling failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+        500, 
+        500, 
+        origin
+      );
+    }
+  })
 );
 
 router.all(

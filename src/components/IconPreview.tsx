@@ -11,6 +11,7 @@ export function IconPreview({ src, alt, className = "", previewSize = "md" }: Ic
   const [isHovered, setIsHovered] = useState(false);
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
   const iconRef = useRef<HTMLImageElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const sizeClasses = {
     sm: "w-32 h-32",
@@ -19,29 +20,54 @@ export function IconPreview({ src, alt, className = "", previewSize = "md" }: Ic
   };
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    setIsHovered(true);
-    updatePreviewPosition(e);
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
+    // Set a small delay before showing the preview to prevent flickering
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+      updatePreviewPosition(e);
+    }, 100);
   };
 
   const handleMouseLeave = () => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
     setIsHovered(false);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    updatePreviewPosition(e);
+    // Only update position if already hovered
+    if (isHovered) {
+      updatePreviewPosition(e);
+    }
   };
 
   const updatePreviewPosition = (e: React.MouseEvent) => {
     if (iconRef.current) {
       const rect = iconRef.current.getBoundingClientRect();
       
-      // Position the preview above the icon, centered
+      // Position the preview above the icon, centered, with more spacing to avoid overlap
       const x = rect.left + rect.width / 2 + window.scrollX;
-      const y = rect.top + window.scrollY - 20; // 20px above the icon
+      const y = rect.top + window.scrollY - 30; // Increased spacing to 30px above the icon
       
       setPreviewPosition({ x, y });
     }
   };
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Close preview when clicking outside
   useEffect(() => {
@@ -95,7 +121,7 @@ export function IconPreview({ src, alt, className = "", previewSize = "md" }: Ic
       
       {isHovered && (
         <div
-          className="fixed z-50 shadow-2xl border-2 border-white rounded-lg overflow-hidden bg-white transition-opacity duration-300 ease-out"
+          className="fixed z-50 shadow-2xl border-2 border-white rounded-lg overflow-hidden bg-white transition-opacity duration-300 ease-out pointer-events-none"
           style={{
             left: `${previewPosition.x}px`,
             top: `${previewPosition.y}px`,

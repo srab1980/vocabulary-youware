@@ -25,12 +25,14 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
   hasFetched: false,
   async fetchCategories(options) {
     const { categoryType, force } = options ?? {};
+    console.log('Fetching categories with options:', { categoryType, force });
     if (get().isLoading && !force) {
       return;
     }
     set({ isLoading: true, error: null });
     try {
       const data = await apiClient.listCategories({ categoryType });
+      console.log('Received categories data:', data.items.length);
       set({
         items: data.items,
         isLoading: false,
